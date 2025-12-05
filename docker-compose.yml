@@ -1,0 +1,41 @@
+services:
+  # MySQL Database
+  mysql:
+    image: mysql:8.0
+    container_name: asistencia_mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: asistencia_db
+    ports:
+      - "3307:3306"
+    volumes:
+      - ./database/setup.sql:/docker-entrypoint-initdb.d/setup.sql
+
+  # phpMyAdmin
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: asistencia_phpmyadmin
+    environment:
+      PMA_HOST: mysql
+      PMA_USER: root
+      PMA_PASSWORD: root
+    ports:
+      - "8081:80"
+    depends_on:
+      - mysql
+
+  # PHP Apache Web Server
+  web:
+    image: php:8.2-apache
+    container_name: asistencia_web
+    ports:
+      - "8000:80"
+    volumes:
+      - ./docs:/var/www/html
+      - ./api:/var/www/html/api
+    depends_on:
+      - mysql
+    command: >
+      bash -c "docker-php-ext-install mysqli pdo pdo_mysql && 
+      a2enmod rewrite && 
+      apache2-foreground"
