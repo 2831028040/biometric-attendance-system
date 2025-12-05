@@ -76,6 +76,14 @@ function startQR() {
 
 // ========== VOZ ==========
 function startVoice() {
+    // Verificar si el navegador soporta reconocimiento de voz
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    
+    if (!SpeechRecognition) {
+        showToast('❌ Tu navegador no soporta reconocimiento de voz. Usa Chrome en Android o PC.');
+        return;
+    }
+    
     currentMethod = 'voice';
     document.getElementById('scanner').classList.add('active');
     document.getElementById('scanner-content').innerHTML = `
@@ -83,10 +91,11 @@ function startVoice() {
             <h3 style="margin-bottom:15px; color: #2c3e50; font-weight: 300; font-size: 20px;">IDENTIFICACIÓN POR VOZ</h3>
             <p style="color:#7f8c8d; margin-bottom: 10px;">Pronuncie su número de identificación</p>
             <p style="color:#95a5a6; font-size: 13px;">Ejemplo: "Mi ID es 12345"</p>
+            <p style="color:#e74c3c; font-size: 12px; margin-top: 15px;">📱 En móviles, usar Chrome Android</p>
         </div>
     `;
     
-    const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+    const recognition = new SpeechRecognition();
     recognition.lang = 'es-MX';
     recognition.continuous = false;
     
