@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>🎀 Sistema Escolar Interactivo</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    body {
+      font-family: "Poppins", cursive;
+      background: linear-gradient(to right, #ffe6f2, #ffeaf7);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      transition: background 0.5s ease;
+    }
+    .container {
+      background: white;
+      padding: 30px 40px;
+      border-radius: 25px;
+      box-shadow: 0 0 20px rgba(255, 105, 180, 0.3);
+      width: 420px;
+      text-align: center;
+      transition: all 0.5s ease;
+    }
+    h1 {
+      color: #ff66b2;
+      margin-bottom: 20px;
+    }
+    input {
+      width: 90%;
+      padding: 8px;
+      margin: 8px 0;
+      border: 2px solid #ffcce6;
+      border-radius: 10px;
+      font-size: 15px;
+      outline: none;
+    }
+    input:focus {
+      border-color: #ff99cc;
+    }
+    button {
+      background-color: #ff80bf;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 15px;
+      cursor: pointer;
+      margin-top: 15px;
+      font-size: 16px;
+      transition: 0.3s;
+    }
+    button:hover {
+      background-color: #ff4da6;
+      transform: scale(1.05);
+    }
+    .resultado {
+      margin-top: 20px;
+      font-size: 16px;
+      background: #fff0f5;
+      border-radius: 15px;
+      padding: 15px;
+      box-shadow: inset 0 0 5px rgba(255,182,193,0.5);
+    }
+    .rojo { color: red; font-weight: bold; }
+    .amarillo { color: goldenrod; font-weight: bold; }
+    .verde { color: green; font-weight: bold; }
+    a {
+      text-decoration: none;
+      display: inline-block;
+      margin-top: 10px;
+      padding: 8px 12px;
+      border-radius: 10px;
+      background: #ffb3d9;
+      color: white;
+      font-weight: bold;
+      transition: 0.3s;
+    }
+    a:hover {
+      background: #ff80bf;
+    }
+    .menu button {
+      width: 80%;
+      margin: 10px auto;
+      display: block;
+    }
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container" id="menu">
+    <h1>🌸 Menú Principal 🌸</h1>
+    <div class="menu">
+      <button onclick="mostrarFormulario('promedios')">📘 Calcular Promedio</button>
+      <button onclick="mostrarFormulario('tablas')">📗 Tabla de Multiplicar</button>
+    </div>
+  </div>
+
+  <!-- Formulario de Promedios -->
+  <div class="container hidden" id="formPromedios">
+    <h1>🎀 Promedio Escolar 🎀</h1>
+    <form id="formulario">
+      <input type="text" id="nombre" placeholder="Nombre del estudiante" required><br>
+      <input type="text" id="numero" placeholder="Número de control" required><br>
+      <input type="number" id="cal1" placeholder="Calificación 1" min="0" max="10" required><br>
+      <input type="number" id="cal2" placeholder="Calificación 2" min="0" max="10" required><br>
+      <input type="number" id="cal3" placeholder="Calificación 3" min="0" max="10" required><br>
+      <input type="number" id="cal4" placeholder="Calificación 4" min="0" max="10" required><br>
+      <input type="number" id="cal5" placeholder="Calificación 5" min="0" max="10" required><br>
+      <button type="button" onclick="calcularPromedio()">Calcular Promedio 💕</button>
+      <button type="button" onclick="volverMenu()">⬅️ Volver al Menú</button>
+    </form>
+    <div id="resultado" class="resultado"></div>
+  </div>
+
+  <!-- Formulario de Tablas -->
+  <div class="container hidden" id="formTablas">
+    <h1>📚 Tabla de Multiplicar 📚</h1>
+    <input type="number" id="tabla" placeholder="¿Qué tabla deseas?" min="1" required>
+    <button type="button" onclick="mostrarTabla()">Mostrar Tabla ✨</button>
+    <button type="button" onclick="volverMenu()">⬅️ Volver al Menú</button>
+    <div id="resultadoTabla" class="resultado"></div>
+  </div>
+
+  <script>
+    function mostrarFormulario(formulario) {
+      document.getElementById("menu").classList.add("hidden");
+      document.getElementById("formPromedios").classList.add("hidden");
+      document.getElementById("formTablas").classList.add("hidden");
+      if (formulario === 'promedios') {
+        document.getElementById("formPromedios").classList.remove("hidden");
+      } else {
+        document.getElementById("formTablas").classList.remove("hidden");
+      }
+    }
+
+    function volverMenu() {
+      document.getElementById("menu").classList.remove("hidden");
+      document.getElementById("formPromedios").classList.add("hidden");
+      document.getElementById("formTablas").classList.add("hidden");
+      document.getElementById("resultado").innerHTML = "";
+      document.getElementById("resultadoTabla").innerHTML = "";
+    }
+
+    async function generarPDF(nombre, numero, calificaciones, promedioFinal, promedioRedondeado) {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(18);
+      doc.setTextColor(255, 105, 180);
+      doc.text("🎀 Boleta de Calificaciones 🎀", 50, 20);
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(12);
+      doc.setTextColor(0, 0, 0);
+      doc.text(`Nombre del Estudiante: ${nombre}`, 20, 40);
+      doc.text(`Número de Control: ${numero}`, 20, 50);
+
+      doc.text("Calificaciones:", 20, 65);
+      calificaciones.forEach((c, i) => {
+        doc.text(`Materia ${i + 1}: ${c}`, 30, 75 + i * 10);
+      });
+
+      doc.text(`Promedio Final: ${promedioFinal.toFixed(2)}`, 20, 135);
+      doc.text(`Promedio Redondeado: ${promedioRedondeado}`, 20, 145);
+
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(60, 179, 113);
+      doc.text("💚 Estás aprobado 💚", 70, 170);
+
+      doc.setFontSize(10);
+      doc.setTextColor(150, 150, 150);
+      doc.text("Generado automáticamente por el sistema escolar", 40, 200);
+
+      doc.save(`Boleta_${nombre.replaceAll(" ", "_")}.pdf`);
+    }
+
+    function calcularPromedio() {
+      const nombre = document.getElementById('nombre').value.trim();
+      const numero = document.getElementById('numero').value.trim();
+      const calificaciones = [
+        parseFloat(document.getElementById('cal1').value),
+        parseFloat(document.getElementById('cal2').value),
+        parseFloat(document.getElementById('cal3').value),
+        parseFloat(document.getElementById('cal4').value),
+        parseFloat(document.getElementById('cal5').value)
+      ];
+
+      if (calificaciones.some(isNaN)) {
+        alert("Por favor, llena todas las calificaciones correctamente.");
+        return;
+      }
+
+      const promedio = calificaciones.reduce((a, b) => a + b, 0) / 5;
+      const promedioFinal = Math.round((promedio + Number.EPSILON) * 100) / 100;
+
+      let promedioRedondeado = Math.floor(promedioFinal * 100) / 100;
+      const decimal = promedioFinal - promedioRedondeado;
+      if (decimal > 0.5) {
+        promedioRedondeado = Math.ceil(promedioFinal);
+      }
+
+      let color = "";
+      let mensaje = "";
+      let enlace = "";
+
+      if (promedioRedondeado >= 1 && promedioRedondeado <= 5) {
+  color = "red";
+  mensaje = "❤ Reprobado";
+  enlace = `<a href="examen_recuperacion.pdf" target="_blank" class="link-descarga">Descarga el examen de recuperación</a>`;
+} else if (promedioRedondeado > 5 && promedioRedondeado <= 6) {
+  color = "orange";
+  mensaje = "💛 Puedes presentar examen de segunda oportunidad";
+  enlace = `<a href="segunda_oportunidad.pdf" target="_blank" class="link-descarga">Ir al examen de segunda oportunidad</a>`;
+} else if (promedioRedondeado > 6 && promedioRedondeado <= 10) {
+  color = "green";
+  mensaje = "💚 Estás aprobado";
+  enlace = `<a href="#" onclick="generarPDF('${nombre}', '${numero}', [${calificaciones}], ${promedioFinal}, ${promedioRedondeado})" class="link-descarga">Descargar Boleta en PDF</a>`;
+}
+
+      document.getElementById("resultado").innerHTML = `
+        <p><strong>Nombre:</strong> ${nombre}</p>
+        <p><strong>Número de Control:</strong> ${numero}</p>
+        <p><strong>Promedio Final:</strong> ${promedioFinal.toFixed(2)}</p>
+        <p class="${color}"><strong>Promedio Redondeado:</strong> ${promedioRedondeado}</p>
+        <p class="${color}">${mensaje}</p>
+        ${enlace}
+      `;
+    }
+
+    function mostrarTabla() {
+      const num = parseInt(document.getElementById('tabla').value);
+      if (isNaN(num) || num <= 0) {
+        alert("Por favor ingresa un número válido mayor que 0.");
+        return;
+      }
+
+      let tablaHTML = "";
+      for (let i = 1; i <= 10; i++) {
+        tablaHTML += `${num} × ${i} = ${num * i}<br>`;
+      }
+
+      document.getElementById("resultadoTabla").innerHTML = `
+        <p><strong>Tabla del ${num}</strong></p>
+        <div>${tablaHTML}</div>
+      `;
+    }
+  </script>
+</body>
+</html>
