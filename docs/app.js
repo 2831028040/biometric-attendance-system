@@ -3,6 +3,7 @@ let currentScanner = null;
 let currentMethod = '';
 const API_URL = '/api/asistencia.php';
 let useLocalStorage = false; // Se detecta automáticamente
+let faceApiLoaded = false; // Estado de carga de face-api.js
 
 // Detectar si hay backend disponible
 async function checkBackend() {
@@ -182,6 +183,16 @@ async function startVoice() {
 
 // ========== GUARDAR ==========
 function saveRecord(scanName, method) {
+    // Obtener fecha y hora local en formato MySQL
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const seconds = String(now.getSeconds()).padStart(2, '0');
+    const fechaLocal = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+    
     if (useLocalStorage) {
         // Modo GitHub Pages - usar localStorage
         const records = JSON.parse(localStorage.getItem('asistencia') || '[]');
@@ -189,7 +200,7 @@ function saveRecord(scanName, method) {
             id: Date.now(),
             nombre: scanName,
             metodo: method,
-            fecha: new Date().toISOString().slice(0, 19).replace('T', ' '),
+            fecha: fechaLocal,
             presente: 1
         });
         localStorage.setItem('asistencia', JSON.stringify(records));
@@ -266,6 +277,9 @@ function closeScanner() {
             currentScanner.stop();
         } else if (typeof currentScanner.abort === 'function') {
             currentScanner.abort();
+        } else if (currentScanner.getTracks) {
+            // Detener stream de video (para reconocimiento facial)
+            currentScanner.getTracks().forEach(track => track.stop());
         }
         currentScanner = null;
     }
@@ -277,7 +291,105 @@ function closeScanner() {
     document.getElementById('scanner-content').innerHTML = '';
 }
 
-// ========== TOAST ==========
+// ========== RECONOCIMIENTO FACIAL ==========
+async function loadFaceApiModels() {
+    if (faceApiLoaded) return true;
+    
+    try {
+        const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/';
+        await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+        faceApiLoaded = true;
+        return true;
+    } catch (error) {
+        console.error('Error cargando modelos face-api:', error);
+        return false;
+    }
+}
+
+async function startFace() {
+    currentMethod = 'face';
+    document.getElementById('scanner').classList.add('active');
+    document.getElementById('scanner-content').innerHTML = `
+        <div style="text-align:center; padding:20px; background: #ecf0f1; border-radius: 3px;">
+            <h3 style="margin-bottom:15px; color: #2c3e50; font-weight: 300; font-size: 20px;">RECONOCIMIENTO FACIAL</h3>
+            <p id="face-status" style="color:#3498db; font-size: 14px; margin-bottom: 15px; font-weight: 500;">Cargando modelos...</p>
+            <video id="face-video" autoplay playsinline style="width:100%; max-width:400px; border-radius:3px; display:none;"></video>
+            <canvas id="face-canvas" style="position:absolute; display:none;"></canvas>
+        </div>
+    `;
+    
+    // Cargar modelos
+    const statusEl = document.getElementById('face-status');
+    statusEl.textContent = '⏳ Cargando modelos de IA...';
+    
+    const modelsLoaded = await loadFaceApiModels();
+    if (!modelsLoaded) {
+        showToast('❌ Error al cargar modelos de reconocimiento facial');
+        closeScanner();
+        return;
+    }
+    
+    // Solicitar acceso a cámara frontal
+    statusEl.textContent = '📷 Solicitando acceso a cámara...';
+    
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+            video: { facingMode: 'user' }, // Cámara frontal
+            audio: false 
+        });
+        
+        const video = document.getElementById('face-video');
+        video.srcObject = stream;
+        video.style.display = 'block';
+        currentScanner = stream;
+        
+        statusEl.textContent = '👤 Posicione su rostro frente a la cámara';
+        
+        // Esperar a que el video esté listo
+        await new Promise(resolve => {
+            video.onloadedmetadata = () => {
+                video.play();
+                resolve();
+            };
+        });
+        
+        // Detectar rostro
+        detectFace(video);
+        
+    } catch (error) {
+        if (error.name === 'NotAllowedError') {
+            showToast('❌ Permiso de cámara denegado');
+        } else if (error.name === 'NotFoundError') {
+            showToast('❌ No se encontró cámara en el dispositivo');
+        } else {
+            showToast('❌ Error al acceder a la cámara: ' + error.message);
+        }
+        closeScanner();
+    }
+}
+
+async function detectFace(video) {
+    const statusEl = document.getElementById('face-status');
+    
+    const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions());
+    
+    if (detection) {
+        // Rostro detectado
+        statusEl.textContent = '✅ Rostro detectado correctamente';
+        const faceId = `FACE_${Date.now()}`; // ID único basado en timestamp
+        
+        saveRecord('Reconocimiento Facial', 'face');
+        
+        setTimeout(() => {
+            closeScanner();
+        }, 1500);
+    } else {
+        // Seguir intentando detectar
+        setTimeout(() => detectFace(video), 100);
+    }
+}
+
+// ========== CERRAR ==========
 function showToast(msg) {
     const toast = document.getElementById('toast');
     toast.textContent = msg;

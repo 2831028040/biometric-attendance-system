@@ -31,6 +31,9 @@ if ($method === 'POST') {
         case 'voice':
             $tabla = 'voice_scans';
             break;
+        case 'face':
+            $tabla = 'face_scans';
+            break;
         default:
             echo json_encode(['success' => false, 'error' => 'Método no válido']);
             exit;
@@ -66,6 +69,12 @@ else if ($method === 'GET') {
     
     // Obtener de voice_scans
     $result = $conn->query("SELECT id, nombre, fecha, presente, 'voice' as metodo FROM voice_scans ORDER BY fecha DESC");
+    while ($row = $result->fetch_assoc()) {
+        $registros[] = $row;
+    }
+    
+    // Obtener de face_scans
+    $result = $conn->query("SELECT id, nombre, fecha, presente, 'face' as metodo FROM face_scans ORDER BY fecha DESC");
     while ($row = $result->fetch_assoc()) {
         $registros[] = $row;
     }
