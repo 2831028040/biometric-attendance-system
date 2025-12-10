@@ -2,18 +2,39 @@
 CREATE DATABASE IF NOT EXISTS asistencia_db;
 USE asistencia_db;
 
--- Tabla de Asistencia
-CREATE TABLE IF NOT EXISTS asistencia (
+-- Tabla para Código de Barras
+CREATE TABLE IF NOT EXISTS barcode_scans (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    codigo VARCHAR(50) NOT NULL,
-    metodo VARCHAR(20) NOT NULL,
+    nombre VARCHAR(100) NOT NULL,
+    fecha DATETIME DEFAULT CURRENT_TIMESTAMP,
+    presente TINYINT DEFAULT 1
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Tabla para Código QR
+CREATE TABLE IF NOT EXISTS qr_scans (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL,
+    fecha DATETIME DEFAULT CURRENT_TIMESTAMP,
+    presente TINYINT DEFAULT 1
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Tabla para Reconocimiento de Voz
+CREATE TABLE IF NOT EXISTS voice_scans (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL,
     fecha DATETIME DEFAULT CURRENT_TIMESTAMP,
     presente TINYINT DEFAULT 1
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Datos de ejemplo
-INSERT INTO asistencia (codigo, metodo, presente) VALUES
-('12345', 'barcode', 1),
-('67890', 'qr', 1),
-('ABC123', 'voice', 1);
+INSERT INTO barcode_scans (nombre, presente) VALUES
+('Juan Pérez', 1),
+('María García', 1);
 
+INSERT INTO qr_scans (nombre, presente) VALUES
+('Carlos López', 1),
+('Ana Martínez', 1);
+
+INSERT INTO voice_scans (nombre, presente) VALUES
+('Pedro Rodríguez', 1),
+('Laura Hernández', 1);

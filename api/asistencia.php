@@ -16,11 +16,28 @@ $method = $_SERVER['REQUEST_METHOD'];
 if ($method === 'POST') {
     $data = json_decode(file_get_contents('php://input'), true);
     
-    $codigo = $data['codigo'] ?? '';
+    $nombre = $data['nombre'] ?? '';
     $metodo = $data['metodo'] ?? '';
     
-    $stmt = $conn->prepare("INSERT INTO asistencia (codigo, metodo, presente) VALUES (?, ?, 1)");
-    $stmt->bind_param("ss", $codigo, $metodo);
+    // Determinar la tabla según el método
+    $tabla = '';
+    switch ($metodo) {
+        case 'barcode':
+            $tabla = 'barcode_scans';
+            break;
+        case 'qr':
+            $tabla = 'qr_scans';
+            break;
+        case 'voice':
+            $tabla = 'voice_scans';
+            break;
+        default:
+            echo json_encode(['success' => false, 'error' => 'Método no válido']);
+            exit;
+    }
+    
+    $stmt = $conn->prepare("INSERT INTO $tabla (nombre, presente) VALUES (?, 1)");
+    $stmt->bind_param("s", $nombre);
     
     if ($stmt->execute()) {
         echo json_encode(['success' => true, 'id' => $stmt->insert_id]);
@@ -31,14 +48,32 @@ if ($method === 'POST') {
     $stmt->close();
 }
 
-// GET - Obtener todos
+// GET - Obtener todos de todas las tablas
 else if ($method === 'GET') {
-    $result = $conn->query("SELECT * FROM asistencia ORDER BY fecha DESC");
     $registros = [];
     
+    // Obtener de barcode_scans
+    $result = $conn->query("SELECT id, nombre, fecha, presente, 'barcode' as metodo FROM barcode_scans ORDER BY fecha DESC");
     while ($row = $result->fetch_assoc()) {
         $registros[] = $row;
     }
+    
+    // Obtener de qr_scans
+    $result = $conn->query("SELECT id, nombre, fecha, presente, 'qr' as metodo FROM qr_scans ORDER BY fecha DESC");
+    while ($row = $result->fetch_assoc()) {
+        $registros[] = $row;
+    }
+    
+    // Obtener de voice_scans
+    $result = $conn->query("SELECT id, nombre, fecha, presente, 'voice' as metodo FROM voice_scans ORDER BY fecha DESC");
+    while ($row = $result->fetch_assoc()) {
+        $registros[] = $row;
+    }
+    
+    // Ordenar todos los registros por fecha descendente
+    usort($registros, function($a, $b) {
+        return strtotime($b['fecha']) - strtotime($a['fecha']);
+    });
     
     echo json_encode(['success' => true, 'data' => $registros]);
 }

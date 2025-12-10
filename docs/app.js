@@ -125,7 +125,7 @@ function saveRecord(userId, method) {
         const records = JSON.parse(localStorage.getItem('asistencia') || '[]');
         records.push({
             id: Date.now(),
-            codigo: userId,
+            nombre: userId,
             metodo: method,
             fecha: new Date().toISOString().slice(0, 19).replace('T', ' '),
             presente: 1
@@ -139,7 +139,7 @@ function saveRecord(userId, method) {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                codigo: userId,
+                nombre: userId,
                 metodo: method
             })
         })
@@ -185,7 +185,7 @@ function displayRecords(records) {
     const html = records.map(r => `
         <div class="record">
             <div>
-                <strong>${r.codigo}</strong><br>
+                <strong>${r.nombre}</strong><br>
                 <small>${r.fecha}</small>
             </div>
             <span class="badge">${r.metodo}</span>
