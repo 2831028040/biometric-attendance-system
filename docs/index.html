@@ -82,6 +82,16 @@
             border: 1px solid #ddd;
         }
         
+        /* Ocultar canvas duplicado de Quagga */
+        #barcode-reader canvas.drawingBuffer {
+            display: none !important;
+        }
+        
+        #barcode-reader video {
+            width: 100% !important;
+            height: auto !important;
+        }
+        
         .records {
             background: white;
             border-radius: 4px;
