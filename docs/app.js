@@ -48,7 +48,7 @@ function startBarcode() {
 
     Quagga.onDetected((data) => {
         const code = data.codeResult.code;
-        saveRecord(code, 'barcode');
+        saveRecord('Escaneo de Barras', 'barcode');
         Quagga.stop();
         closeScanner();
     });
@@ -67,7 +67,7 @@ function startQR() {
         { facingMode: "environment" },
         { fps: 10, qrbox: 250 },
         (decodedText) => {
-            saveRecord(decodedText, 'qr');
+            saveRecord('Escaneo QR', 'qr');
             html5QrCode.stop();
             closeScanner();
         }
@@ -106,7 +106,7 @@ function startVoice() {
         const match = transcript.match(/\d+/);
         if (match) {
             const userId = match[0];
-            saveRecord(userId, 'voice');
+            saveRecord('Reconocimiento de Voz', 'voice');
             closeScanner();
         } else {
             showToast('No se detectó ningún ID. Intenta de nuevo.');
@@ -119,27 +119,27 @@ function startVoice() {
 }
 
 // ========== GUARDAR ==========
-function saveRecord(userId, method) {
+function saveRecord(scanName, method) {
     if (useLocalStorage) {
         // Modo GitHub Pages - usar localStorage
         const records = JSON.parse(localStorage.getItem('asistencia') || '[]');
         records.push({
             id: Date.now(),
-            nombre: userId,
+            nombre: scanName,
             metodo: method,
             fecha: new Date().toISOString().slice(0, 19).replace('T', ' '),
             presente: 1
         });
         localStorage.setItem('asistencia', JSON.stringify(records));
         loadRecords();
-        showToast(`✅ Registrado (local): ${userId}`);
+        showToast(`✅ Registrado (local): ${scanName}`);
     } else {
         // Modo Docker - usar MySQL
         fetch(API_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                nombre: userId,
+                nombre: scanName,
                 metodo: method
             })
         })
@@ -147,7 +147,7 @@ function saveRecord(userId, method) {
         .then(data => {
             if (data.success) {
                 loadRecords();
-                showToast(`✅ Registrado: ${userId}`);
+                showToast(`✅ Registrado: ${scanName}`);
             } else {
                 showToast('❌ Error al registrar');
             }

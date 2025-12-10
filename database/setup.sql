@@ -28,13 +28,13 @@ CREATE TABLE IF NOT EXISTS voice_scans (
 
 -- Datos de ejemplo
 INSERT INTO barcode_scans (nombre, presente) VALUES
-('Juan Pérez', 1),
-('María García', 1);
+('Escaneo de Barras', 1),
+('Escaneo de Barras', 1);
 
 INSERT INTO qr_scans (nombre, presente) VALUES
-('Carlos López', 1),
-('Ana Martínez', 1);
+('Escaneo QR', 1),
+('Escaneo QR', 1);
 
 INSERT INTO voice_scans (nombre, presente) VALUES
-('Pedro Rodríguez', 1),
-('Laura Hernández', 1);
+('Reconocimiento de Voz', 1),
+('Reconocimiento de Voz', 1);
