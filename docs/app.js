@@ -80,7 +80,7 @@ function startVoice() {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     
     if (!SpeechRecognition) {
-        showToast('❌ Tu navegador no soporta reconocimiento de voz. Usa Chrome en Android o PC.');
+        showToast('❌ Tu navegador no soporta reconocimiento de voz. Usa Chrome.');
         return;
     }
     
@@ -89,33 +89,74 @@ function startVoice() {
     document.getElementById('scanner-content').innerHTML = `
         <div style="text-align:center; padding:50px 20px; background: #ecf0f1; border-radius: 3px;">
             <h3 style="margin-bottom:15px; color: #2c3e50; font-weight: 300; font-size: 20px;">IDENTIFICACIÓN POR VOZ</h3>
-            <p style="color:#7f8c8d; margin-bottom: 10px;">Pronuncie su número de identificación</p>
-            <p style="color:#95a5a6; font-size: 13px;">Ejemplo: "Mi ID es 12345"</p>
-            <p style="color:#e74c3c; font-size: 12px; margin-top: 15px;">📱 En móviles, usar Chrome Android</p>
+            <p style="color:#7f8c8d; margin-bottom: 10px;">Pronuncie cualquier cosa para registrar</p>
+            <p style="color:#95a5a6; font-size: 13px;">Ejemplo: "Hola" o "12345"</p>
+            <p id="voice-status" style="color:#3498db; font-size: 14px; margin-top: 15px; font-weight: 500;">🎤 Preparando micrófono...</p>
         </div>
     `;
     
     const recognition = new SpeechRecognition();
-    recognition.lang = 'es-MX';
+    recognition.lang = 'es-ES';
     recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+    
+    recognition.onstart = () => {
+        document.getElementById('voice-status').innerHTML = '🎤 Escuchando... Habla ahora';
+        document.getElementById('voice-status').style.color = '#27ae60';
+    };
     
     recognition.onresult = (event) => {
-        const transcript = event.results[0][0].transcript.toLowerCase();
+        const transcript = event.results[0][0].transcript;
+        document.getElementById('voice-status').innerHTML = `✅ Detectado: "${transcript}"`;
+        document.getElementById('voice-status').style.color = '#27ae60';
         
-        // Extraer números del texto
-        const match = transcript.match(/\d+/);
-        if (match) {
-            const userId = match[0];
+        setTimeout(() => {
             saveRecord('Reconocimiento de Voz', 'voice');
             closeScanner();
-        } else {
-            showToast('No se detectó ningún ID. Intenta de nuevo.');
+        }, 1000);
+    };
+    
+    recognition.onerror = (event) => {
+        let mensaje = 'Error de voz. ';
+        switch(event.error) {
+            case 'no-speech':
+                mensaje = '⚠️ No se detectó voz. Intenta de nuevo.';
+                break;
+            case 'audio-capture':
+                mensaje = '❌ No se puede acceder al micrófono. Verifica permisos.';
+                break;
+            case 'not-allowed':
+                mensaje = '❌ Permiso denegado. Permite acceso al micrófono.';
+                break;
+            case 'network':
+                mensaje = '❌ Error de red. Verifica tu conexión.';
+                break;
+            default:
+                mensaje = `❌ Error: ${event.error}`;
+        }
+        document.getElementById('voice-status').innerHTML = mensaje;
+        document.getElementById('voice-status').style.color = '#e74c3c';
+        showToast(mensaje);
+    };
+    
+    recognition.onend = () => {
+        if (currentMethod === 'voice' && currentScanner) {
+            // Solo mostrar mensaje si no se detectó nada
+            const status = document.getElementById('voice-status');
+            if (status && status.style.color !== '#27ae60') {
+                status.innerHTML = '⚠️ Presiona "Cerrar" e intenta de nuevo';
+            }
         }
     };
     
-    recognition.onerror = () => showToast('Error de voz. Intenta de nuevo.');
-    recognition.start();
-    currentScanner = recognition;
+    try {
+        recognition.start();
+        currentScanner = recognition;
+    } catch(e) {
+        showToast('❌ Error al iniciar reconocimiento: ' + e.message);
+        closeScanner();
+    }
 }
 
 // ========== GUARDAR ==========
