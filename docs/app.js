@@ -255,15 +255,33 @@ function loadRecords() {
 function displayRecords(records) {
     document.getElementById('total').textContent = records.length;
     
-    const html = records.map(r => `
-        <div class="record">
-            <div>
-                <strong>${r.nombre}</strong><br>
-                <small>${r.fecha}</small>
+    const html = records.map(r => {
+        // Convertir fecha de MySQL a formato local legible
+        let fechaDisplay = r.fecha;
+        try {
+            // Si la fecha viene de MySQL en formato "YYYY-MM-DD HH:MM:SS"
+            const fecha = new Date(r.fecha.replace(' ', 'T'));
+            const dia = String(fecha.getDate()).padStart(2, '0');
+            const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+            const año = fecha.getFullYear();
+            const horas = String(fecha.getHours()).padStart(2, '0');
+            const minutos = String(fecha.getMinutes()).padStart(2, '0');
+            const segundos = String(fecha.getSeconds()).padStart(2, '0');
+            fechaDisplay = `${dia}/${mes}/${año} ${horas}:${minutos}:${segundos}`;
+        } catch (e) {
+            // Si hay error, mostrar la fecha original
+        }
+        
+        return `
+            <div class="record">
+                <div>
+                    <strong>${r.nombre}</strong><br>
+                    <small>${fechaDisplay}</small>
+                </div>
+                <span class="badge">${r.metodo}</span>
             </div>
-            <span class="badge">${r.metodo}</span>
-        </div>
-    `).join('');
+        `;
+    }).join('');
     
     document.getElementById('list').innerHTML = html || '<p style="color:#999; text-align:center;">Sin registros</p>';
 }
