@@ -75,28 +75,12 @@ function startQR() {
 }
 
 // ========== VOZ ==========
-async function startVoice() {
+function startVoice() {
     // Verificar si el navegador soporta reconocimiento de voz
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     
     if (!SpeechRecognition) {
         showToast('❌ Tu navegador no soporta reconocimiento de voz. Usa Chrome.');
-        return;
-    }
-    
-    // Pedir permiso de micrófono primero
-    try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        // Detener el stream inmediatamente, solo queremos verificar permiso
-        stream.getTracks().forEach(track => track.stop());
-    } catch (error) {
-        if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
-            showToast('❌ Permiso de micrófono denegado. Por favor permite el acceso.');
-        } else if (error.name === 'NotFoundError') {
-            showToast('❌ No se encontró micrófono en el dispositivo.');
-        } else {
-            showToast('❌ Error al acceder al micrófono: ' + error.message);
-        }
         return;
     }
     
