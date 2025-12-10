@@ -75,7 +75,7 @@ function startQR() {
 }
 
 // ========== VOZ ==========
-function startVoice() {
+async function startVoice() {
     // Verificar si el navegador soporta reconocimiento de voz
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     
@@ -94,6 +94,27 @@ function startVoice() {
             <p id="voice-status" style="color:#3498db; font-size: 14px; margin-top: 15px; font-weight: 500;">🎤 Preparando micrófono...</p>
         </div>
     `;
+    
+    // Detectar si es Chrome en Android
+    const isChromeMobile = /Android/i.test(navigator.userAgent) && /Chrome/i.test(navigator.userAgent) && !/Edge/i.test(navigator.userAgent);
+    
+    // Solo en Chrome Android, pedir permiso explícito primero
+    if (isChromeMobile) {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            stream.getTracks().forEach(track => track.stop());
+        } catch (error) {
+            if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+                showToast('❌ Permiso de micrófono denegado. Por favor permite el acceso.');
+            } else if (error.name === 'NotFoundError') {
+                showToast('❌ No se encontró micrófono en el dispositivo.');
+            } else {
+                showToast('❌ Error al acceder al micrófono: ' + error.message);
+            }
+            closeScanner();
+            return;
+        }
+    }
     
     const recognition = new SpeechRecognition();
     recognition.lang = 'es-ES';
